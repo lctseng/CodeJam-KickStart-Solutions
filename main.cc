@@ -2,12 +2,6 @@
 #include <iostream>
 using namespace std;
 
-// static const auto _ = []() {
-//     std::ios::sync_with_stdio( false );
-//     std::cin.tie( nullptr );
-//     return nullptr;
-// }( );
-
 int main() {
   int T;
   cin >> T;
