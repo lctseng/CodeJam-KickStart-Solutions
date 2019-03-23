@@ -1,5 +1,22 @@
 #include <algorithm>
+#include <array>
+#include <climits>
+#include <cstdlib>
+#include <cstring>
+#include <deque>
+#include <functional>
 #include <iostream>
+#include <limits>
+#include <list>
+#include <map>
+#include <numeric>
+#include <queue>
+#include <set>
+#include <stack>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
 using namespace std;
 
 int main() {
