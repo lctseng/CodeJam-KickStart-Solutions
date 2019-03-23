@@ -47,7 +47,7 @@ pair<int, int> makeFunValue(int top, int down) {
   return make_pair(top, down);
 }
 
-string solve(int R, int C, vector<vector<char>> &grid, vector<string> words) {
+string solve(int R, int C, vector<vector<char>> &grid, vector<string> &words) {
   // create RxC sum area table, each entry
   vector<vector<Histogram>> table(R, vector<Histogram>(C));
   for (int i = 0; i < R; i++) {
@@ -62,24 +62,12 @@ string solve(int R, int C, vector<vector<char>> &grid, vector<string> words) {
       if (i > 0 && j > 0) {
         table[i][j] -= table[i - 1][j - 1];
       }
-      // cout << "histogram table " << i << ", " << j << endl;
-      // for (int w = 0; w < 26; w++) {
-      //   if (table[i][j].data[w] > 0) {
-      //     cout << (char)('A' + w) << ": " << table[i][j].data[w] << endl;
-      //   }
-      // }
     }
   }
   Histogram wordCount;
   for (auto &word : words) {
     wordCount.data[word[0] - 'A']++;
   }
-  // cout << "wordCount table" << endl;
-  // for (int w = 0; w < 26; w++) {
-  //   if (wordCount.data[w] > 0) {
-  //     cout << (char)('A' + w) << ": " << wordCount.data[w] << endl;
-  //   }
-  // }
   // create fun value to count
   pair<int, int> maxFunData = make_pair(-1, -1);
   double maxFunValue = -1;
@@ -118,10 +106,66 @@ string solve(int R, int C, vector<vector<char>> &grid, vector<string> words) {
       }
     }
   }
-  // TODO: parse
+  // parse
   return to_string(maxFunData.first) + "/" + to_string(maxFunData.second) +
          " " + to_string(maxFunCount);
 }
+
+string solveAlternative(int R, int C, vector<vector<char>> &grid,
+                        vector<string> &words) {
+
+  // for small case, trim words
+  words.resize(min(26, (int)words.size()));
+  // create colSum data
+  vector<vector<int>> colSum(R, vector<int>(C));
+  for (int j = 0; j < C; j++) {
+    for (int i1 = 0; i1 < R; i1++) {
+      for (auto &word : words) {
+        if (word[0] == grid[i1][j]) {
+          colSum[i1][j] += 4;
+          break;
+        }
+      }
+      if (i1 > 0)
+        colSum[i1][j] += colSum[i1 - 1][j];
+    }
+  }
+  // colSum[i1][j] : sum of column length from [0, j] to [i1, j]
+  // iterate through all subgrid
+  pair<int, int> maxFunData = make_pair(-1, -1);
+  double maxFunValue = -1;
+  int maxFunCount = 0;
+  for (int firstRow = 0; firstRow < R; firstRow++) {
+    for (int lastRow = firstRow; lastRow < R; lastRow++) {
+      for (int firstCol = 0; firstCol < C; firstCol++) {
+        int prevFun = 0;
+        for (int lastCol = firstCol; lastCol < C; lastCol++) {
+          int fun1 = prevFun;
+          fun1 += colSum[lastRow][lastCol];
+          if (firstRow > 0)
+            fun1 -= colSum[firstRow - 1][lastCol];
+          prevFun = fun1;
+          int fun2 = lastRow - firstRow + lastCol - firstCol + 2;
+          auto funData = makeFunValue(fun1, fun2);
+          if (funData == maxFunData) {
+            ++maxFunCount;
+          } else {
+            double funValue = (double)funData.first / funData.second;
+            if (funValue > maxFunValue) {
+              maxFunValue = funValue;
+              maxFunData = funData;
+              maxFunCount = 1;
+            }
+          }
+        }
+      }
+    }
+  }
+  // parse
+  return to_string(maxFunData.first) + "/" + to_string(maxFunData.second) +
+         " " + to_string(maxFunCount);
+}
+
 }; // namespace Small
 
 int main() {
@@ -144,7 +188,8 @@ int main() {
       getline(cin, str);
       words.emplace_back(move(str));
     }
-    cout << "Case #" << t << ": " << Small::solve(R, C, grid, words) << endl;
+    cout << "Case #" << t << ": " << Small::solveAlternative(R, C, grid, words)
+         << endl;
   }
   return 0;
 }
