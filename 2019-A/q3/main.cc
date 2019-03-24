@@ -44,11 +44,14 @@ public:
   }
 
   SegmentTree(int initVal, int dataLen) : dataLen(dataLen) {
+    if (!dataLen)
+      return;
     // find the nearest pow of 2
     int pow = 1;
     while (pow < dataLen)
       pow *= 2;
-    tree.resize(pow * 2, 0); // resize to all zeros
+    tree.resize(pow * 2);
+    build(vector<int>(dataLen, initVal), 0, dataLen - 1, 1);
   }
 
   int query(int low, int high) { return query(low, high, 0, dataLen - 1, 1); }
@@ -106,7 +109,7 @@ private:
     }
   }
 
-  void build(vector<int> &nums, int low, int high, int pos) {
+  void build(const vector<int> &nums, int low, int high, int pos) {
     if (low == high) {
       tree[pos] = nums[low];
     } else {
@@ -129,6 +132,7 @@ int solve(int N, int Q, vector<Interval> &bookings) {
   // build segTree, all 0, range 0 to N-1 (N elements)
   // from small to large, query occupied within range
   // minK = min(minK, interval.length() - current_occupied);
+
   // set<int> endpointSet;
   // for(auto& interval : bookings){
   //   endpointSet.insert(interval.left);
@@ -141,24 +145,25 @@ int solve(int N, int Q, vector<Interval> &bookings) {
   //   endpointMap[endpoint] = compressedN++;
   //   compressedEndpoints.push_back(endpoint);
   // }
-  //
+
   sort(bookings.begin(), bookings.end(),
        [](const Interval &a, const Interval &b) {
          return a.length() < b.length();
        });
   int minK = bookings[0].length();
-  SegmentTree tree(0, N);
+  SegmentTree tree(1, N);
   for (int q = 0; q < bookings.size(); q++) {
     // cout << q << endl;
     auto &interval = bookings[q];
     // query
-    int occupied = tree.query(interval.left, interval.right);
-    // printf("book interval: %d %d, occupied: %d\n", interval.left,
-    //       interval.right, occupied);
-    minK = min(minK, interval.length() - occupied);
+    int current = tree.query(interval.left, interval.right);
+    // printf("book interval: %d %d, booked: %d\n", interval.left,
+    // interval.right,
+    //       current);
+    minK = min(minK, current);
     // update
     for (int i = interval.left; i <= interval.right; i++) {
-      tree.update(i, 1);
+      tree.update(i, 0);
     }
   }
   return minK;
