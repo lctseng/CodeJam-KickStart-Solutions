@@ -26,7 +26,8 @@ using namespace std;
 
 struct Interval {
   int left, right;
-  int length() const { return right - left + 1; }
+  int length() const { return right - left; }
+  // not include right!!
 };
 
 class SegmentTree {
@@ -133,36 +134,45 @@ int solve(int N, int Q, vector<Interval> &bookings) {
   // from small to large, query occupied within range
   // minK = min(minK, interval.length() - current_occupied);
 
-  // set<int> endpointSet;
-  // for(auto& interval : bookings){
-  //   endpointSet.insert(interval.left);
-  //   endpointSet.insert(interval.right);
-  // }
-  // unordered_map<int, int> endpointMap;
-  // vector<int> compressedEndpoints;
-  // int compressedN = 0;
-  // for(int endpoint : endpointSet){
-  //   endpointMap[endpoint] = compressedN++;
-  //   compressedEndpoints.push_back(endpoint);
-  // }
-
+  set<int> endpointSet;
+  for (auto &interval : bookings) {
+    endpointSet.insert(interval.left);
+    endpointSet.insert(interval.right);
+  }
+  unordered_map<int, int> endpointMap;
+  vector<int> compressedEndpoints;
+  int compressedN = 0;
+  for (int endpoint : endpointSet) {
+    endpointMap[endpoint] = compressedN++;
+    compressedEndpoints.push_back(endpoint);
+  }
+  vector<int> nums;
+  for (int i = 1; i < compressedEndpoints.size(); i++) {
+    nums.push_back(compressedEndpoints[i] - compressedEndpoints[i - 1]);
+    // cout << nums.back() << endl;
+  }
   sort(bookings.begin(), bookings.end(),
        [](const Interval &a, const Interval &b) {
          return a.length() < b.length();
        });
   int minK = bookings[0].length();
-  SegmentTree tree(1, N);
+  // cout << "total nums: " << nums.size() << endl;
+  SegmentTree tree(nums);
   for (int q = 0; q < bookings.size(); q++) {
-    // cout << q << endl;
+    if (q % 1000 == 0) {
+      // cout << q << endl;
+    }
     auto &interval = bookings[q];
     // query
-    int current = tree.query(interval.left, interval.right);
+    int cLeft = endpointMap[interval.left];
+    int cRight = endpointMap[interval.right];
+    int current = tree.query(cLeft, cRight - 1);
     // printf("book interval: %d %d, booked: %d\n", interval.left,
     // interval.right,
-    //       current);
+    //        current);
     minK = min(minK, current);
     // update
-    for (int i = interval.left; i <= interval.right; i++) {
+    for (int i = cLeft; i < cRight; i++) {
       tree.update(i, 0);
     }
   }
@@ -186,8 +196,11 @@ int main() {
     vector<Interval> bookings(Q);
     for (int i = 0; i < Q; i++) {
       cin >> bookings[i].left >> bookings[i].right;
-      bookings[i].left--;  // 0 to N-1
-      bookings[i].right--; // 0 to N-1
+      bookings[i].left--; // 0 to N-1
+      // bookings[i].right--; // 0 to N-1
+      if (bookings[i].right > N) {
+        bookings[i].right = N;
+      }
     }
     cout << "Case #" << t << ": " << Small::solve(N, Q, bookings) << endl;
   }
